@@ -1,0 +1,2 @@
+python ~/workspace/research/vpCluster/mfView.py
+python ~/workspace/research/vpCluster/mfView.py

@@ -1,0 +1,7 @@
+ls
+pwd
+sleep 10
+echo 'inserted after the fact!' 2>&1 > ./remote.txt
+ls -Al
+sleep 10
+echo 'hallo'
