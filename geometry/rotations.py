@@ -209,10 +209,14 @@ class Quaternion:
     plotCosy(figm,self.toRot().R,t,scale,name)
   def rotate(self,v):
 #    vn = normed(v)
-    vq = Quaternion(w=0.,vec=v)
-    vq = self.dot(vq.dot(self.inverse()))
-    return vq.q[1:] #*norm(v)
-
+#    vq = Quaternion(w=0.,vec=v)
+#    vq = self.dot(vq.dot(self.inverse()))
+#    return vq.q[1:] #*norm(v)
+    # from Eigen
+    # http://eigen.tuxfamily.org/dox/Quaternion_8h_source.html
+    uv = np.cross(self.q[1::],v)
+    uv += uv
+    return v + self.q[0] * uv + np.cross(self.q[1::], uv)
 
   def __repr__(self):
 #    return "{}".format(self.q)

@@ -1,5 +1,6 @@
 import numpy as np
 import mayavi.mlab as mlab
+from itertools import combinations
 
 class IcoSphere(object):
     def __init__(self, depth):
@@ -188,3 +189,18 @@ class IcoSphere(object):
             self.vertices[:, 2],
             self.tri[self.tri_levels[level]:self.tri_levels[level+1], :])
         return
+
+class IcoSphereTessellation(IcoSphere):
+  def PlotTessellation(self, level, figm):
+    tri = self.tri[self.tri_levels[level]:self.tri_levels[level+1], :]
+    t = np.linspace(0,1.,10)[:, np.newaxis]
+    color = (level/float(self.depth), 1-level/float(self.depth), 1.)
+    for i in range(tri.shape[0]):
+      for comb in combinations(range(3), 2):
+        a = self.vertices[tri[i, comb[0]],:]
+        b = self.vertices[tri[i, comb[1]],:]
+        c = a + t*(b-a)
+        c = (c.T / np.sqrt((c**2).sum(axis=1))).T
+        mlab.plot3d(c[:,0], c[:,1], c[:,2], tube_radius=0.01,
+            color=color)
+

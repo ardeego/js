@@ -37,8 +37,9 @@ class RgbdFrame(object):
     '''
     s.rgb_dx = np.zeros(1)
     s.pc = np.zeros(1)
-    s.n = np.zeros(1)
   def load(s,path):
+    path = re.sub("_rgb.png","",path)
+    path = re.sub("_d.png","",path)
     path = re.sub("_rgb","",path)
     s.path = path
     if os.path.isfile(path+'.mat'):
@@ -75,11 +76,28 @@ class RgbdFrame(object):
       s.d = cv2.imread(path+'_d.png',cv2.CV_LOAD_IMAGE_UNCHANGED)
     else:
       print 'error reading depth file from '+path+'_d.png'
+    if os.path.isfile(path+'_dSmooth.png'):
+      print 'loading from '+path+'_d.png'
+      s.dSmooth = cv2.imread(path+'_dSmooth.png',cv2.CV_LOAD_IMAGE_UNCHANGED)
+    else:
+      print 'no smooth depth file found at '+path+'_dSmooth.png'
+      s.dSmooth = np.ones(1)
     if os.path.isfile(path+'_rgb.png'):  
       print 'loading from '+path+'_rgb.png'
       s.rgb = cv2.imread(path+'_rgb.png')
     else:
       print 'error reading rgb file from '+path+'_rgb.png'
+    if os.path.isfile(path+'.normals'):  
+      print 'loading from '+path+'.normals'
+      with open(path+".normals") as f:
+        shape = np.fromstring(f.readline(),sep=" ")
+        print shape
+        s.n = np.fromfile(f, dtype=np.float32, count=-1,
+            sep="").reshape(shape)
+        print s.n.shape, shape[0]*shape[1]*shape[2]
+    else:
+      print 'no surface normal file found at '+path+'.normals'
+      s.n = np.zeros(1)
     print s.rgb.shape
     s.gray = cv2.cvtColor(s.rgb, cv2.COLOR_BGR2GRAY)
     print s.gray.shape
@@ -107,6 +125,10 @@ class RgbdFrame(object):
       s.rgb_phi = np.arctan2(s.rgb_dy,s.rgb_dx)
     return s.rgb_dx, s.rgb_dy, s.rgb_E, s.rgb_phi
   def getNormals(s,renormalize=False,algo=None,path=None,reCompute=False):
+    print s.n.shape, s.rgb.shape
+    if s.n.shape[0] == s.rgb.shape[0] and s.n.shape[1] == \
+      s.rgb.shape[1] and s.n.shape[2] == s.rgb.shape[2]:
+        return s.n
     if algo is None:
       algo = 'sobel'
     if s.n.size == 1:
@@ -134,6 +156,13 @@ class RgbdFrame(object):
       fig = plt.figure()
     plt.imshow(s.d,interpolation='nearest',cmap = cm.jet)
     fig.show()
+  def showRgbdSmooth(s,fig=None):
+    if s.dSmooth.shape[0] == s.rgb.shape[0]:
+      cv2.imshow('rgb',s.rgb)
+      if fig is None:
+        fig = plt.figure()
+      plt.imshow(s.dSmooth,interpolation='nearest',cmap = cm.jet)
+      fig.show()
   def showRgbGrad(s):
     s.getRgbGrad()
     cv2.imshow('dx and dy; absolute value of gradient, angle of gradient', \
