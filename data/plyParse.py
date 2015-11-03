@@ -31,7 +31,7 @@ class PlyParse:
           typ = lineSplit[1]
           name = ' '.join(lineSplit[2::])
           self.elements[elem]['props'].append([typ,name])
-          print elem+': type='+typ+' name='+name
+#          print elem+': type='+typ+' name='+name
         else:
           print 'not sure which element this property belongs to'
           raise NotImplementedError
@@ -44,8 +44,8 @@ class PlyParse:
         self.pts = np.zeros((3,self.elements[elem]['N']))
         self.n = np.zeros((3,self.elements[elem]['N']))
         self.rgb = np.zeros((3,self.elements[elem]['N']))
-        print self.n.shape
-        print self.n.strides
+#        print self.n.shape
+#        print self.n.strides
         for j,typeName in enumerate(self.elements[elem]['props']):
           if typeName[1] == 'x':
             self.pts[0,:] = data[:,j]

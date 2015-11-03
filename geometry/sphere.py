@@ -147,9 +147,11 @@ class Sphere:
     z = r*cos(phi)
     return (x,y,z)
 
-  def plot(s,figm,r,N=30,linewidth=3):
+  def plot(s,figm,r,N=30,linewidth=3,color=None):
     X,Y,Z = s.mesh(r)
-    mlab.mesh(X,Y,Z,color=(0.5,0.5,0.5), opacity=1.0, figure=figm)
+    if color is None:
+      color = (0.5,0.5,0.5)
+    mlab.mesh(X,Y,Z,color=color, opacity=1.0, figure=figm)
 #    s.plotFanzy(figm,r,N,linewidth)
 #    X,Y,Z = s.mesh(r)
 #    mlab.mesh(X,Y,Z,color=(0.5,0.5,0.5), opacity=0.5, figure=figm, representation='wireframe' )

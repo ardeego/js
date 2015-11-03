@@ -181,20 +181,31 @@ class IcoSphere(object):
     def GetNumLevels(self):
       return len(self.tri_levels) - 1
 
-    def Plot(self, level, figm):
+    def Plot(self, level, figm, color=None):
         if level + 1 >= len(self.tri_levels):
             print "Cannot plot this level in the IcoSphere"
             return 
         mlab.triangular_mesh(self.vertices[:, 0], self.vertices[:, 1],
             self.vertices[:, 2],
-            self.tri[self.tri_levels[level]:self.tri_levels[level+1], :])
+            self.tri[self.tri_levels[level]:self.tri_levels[level+1],
+              :], color=(0.6,0.6,0.6))
+        if color is None:
+          color = (level/float(self.depth), 1-level/float(self.depth), 1.)
+        tri = self.tri[self.tri_levels[level]:self.tri_levels[level+1], :]
+        for i in range(tri.shape[0]):
+          for comb in combinations(range(3), 2):
+            a = self.vertices[tri[i, comb[0]],:]
+            b = self.vertices[tri[i, comb[1]],:]
+            mlab.plot3d([a[0],b[0]], [a[1],b[1]], [a[2],b[2]], tube_radius=0.01,
+                color=color)
         return
 
 class IcoSphereTessellation(IcoSphere):
-  def PlotTessellation(self, level, figm):
+  def PlotTessellation(self, level, figm, color=None):
     tri = self.tri[self.tri_levels[level]:self.tri_levels[level+1], :]
     t = np.linspace(0,1.,10)[:, np.newaxis]
-    color = (level/float(self.depth), 1-level/float(self.depth), 1.)
+    if color is None:
+      color = (level/float(self.depth), 1-level/float(self.depth), 1.)
     for i in range(tri.shape[0]):
       for comb in combinations(range(3), 2):
         a = self.vertices[tri[i, comb[0]],:]
