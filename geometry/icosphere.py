@@ -196,7 +196,7 @@ class IcoSphere(object):
           for comb in combinations(range(3), 2):
             a = self.vertices[tri[i, comb[0]],:]
             b = self.vertices[tri[i, comb[1]],:]
-            mlab.plot3d([a[0],b[0]], [a[1],b[1]], [a[2],b[2]], tube_radius=0.01,
+            mlab.plot3d([a[0],b[0]], [a[1],b[1]], [a[2],b[2]], tube_radius=0.02,
                 color=color)
         return
 
@@ -212,6 +212,6 @@ class IcoSphereTessellation(IcoSphere):
         b = self.vertices[tri[i, comb[1]],:]
         c = a + t*(b-a)
         c = (c.T / np.sqrt((c**2).sum(axis=1))).T
-        mlab.plot3d(c[:,0], c[:,1], c[:,2], tube_radius=0.01,
+        mlab.plot3d(c[:,0], c[:,1], c[:,2], tube_radius=0.02,
             color=color)
 

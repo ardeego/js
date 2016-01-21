@@ -1,6 +1,10 @@
 import numpy as np
 from rot3 import Rot3
 
+
+def normed(a):
+  return a/np.sqrt((a**2).sum())
+
 class Quaternion:
   def __init__(self,w=1.0,x=0.0,y=0.0,z=0.0,vec=None):
     self.q =np.array([w,x,y,z])

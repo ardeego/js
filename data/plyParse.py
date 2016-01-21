@@ -110,7 +110,7 @@ class PlyParse:
     ''' return normals from ply file ''' 
     for i in range(self.n.shape[0]):
       if np.abs(np.sqrt((self.n[i,:]**2).sum())-1.0) > 1e-6 or np.isnan( np.sqrt((self.n[i,:]**2).sum())):
-        print np.sqrt((self.n[i,:]**2).sum()), self.n[i,:]
+#        print np.sqrt((self.n[i,:]**2).sum()), self.n[i,:]
         self.n[i,:] = [1.,0.,0.]
       else:
         self.n[i,:] /= np.sqrt((self.n[i,:]**2).sum())

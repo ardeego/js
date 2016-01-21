@@ -1,14 +1,11 @@
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import numpy as np
-import cv2 
 from scipy.linalg import norm
 
 import scipy.io as scio
 import os,re,pdb
 
 from js.utils.file.buffered import BufferedResult
-import mayavi.mlab as mlab
+import cv2 
 
 def normalize(I):
   return (I-np.min(I))/(np.max(I)-np.min(I))
@@ -151,12 +148,16 @@ class RgbdFrame(object):
       s.n[:,:,2] /= norm
     return s.n
   def showRgbd(s,fig=None):
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
     cv2.imshow('rgb',s.rgb)
     if fig is None:
       fig = plt.figure()
     plt.imshow(s.d,interpolation='nearest',cmap = cm.jet)
     fig.show()
   def showRgbdSmooth(s,fig=None):
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
     if s.dSmooth.shape[0] == s.rgb.shape[0]:
       cv2.imshow('rgb',s.rgb)
       if fig is None:
@@ -169,6 +170,7 @@ class RgbdFrame(object):
       np.r_[np.c_[normalize(s.rgb_dx),normalize(s.rgb_dy)],
             np.c_[normalize(s.rgb_E),normalize(s.rgb_phi)]])
   def showPc(s,figm=None,showNormals=False,algo='sobel',color=(1,0,0)):
+    import mayavi.mlab as mlab
     s.getPc()
     if figm is None:
       figm = mlab.figure(bgcolor=(1,1,1))
@@ -183,6 +185,9 @@ class RgbdFrame(object):
           color=color, scale_factor=0.1,mask_points=50)
     return figm
   def showNormals(s,figm=None,algo='sobel',color=(1,0,0),as2D=False,reCompute=False):
+    import mayavi.mlab as mlab
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
     s.getNormals(algo,reCompute=reCompute)
     if as2D:
       if figm is None:
@@ -203,6 +208,7 @@ class RgbdFrame(object):
           mode='point',mask_points=1)
     return figm
   def showWeightedNormals(s,theta=30.0,figm=None,algo='sobel'):
+    import mayavi.mlab as mlab
     # according to http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6375037
     # weighting is 1.0/\sigma_z
     s.sigma_z = 0.0012 + 0.019*(s.d*0.001-0.4)**2
@@ -220,6 +226,8 @@ class RgbdFrame(object):
     return figm
   #def showWeightedNormals(s,figm=None,algo='sobel'):
   def showAxialSigma(s,fig=None):
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
     # according to http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6375037
     s.sigma_z = 0.0012 + 0.019*(s.d*0.001-0.4)**2
     if fig is None:
@@ -230,6 +238,8 @@ class RgbdFrame(object):
     fig.show()
     return fig
   def showLateralSigma(s,theta=30.0,fig=None):
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
     # according to http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6375037
     ang = theta/180.0*np.pi
     s.sigma_l_px = 0.8 + 0.035*ang/(np.pi/2.0-ang)
