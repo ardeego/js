@@ -36,11 +36,18 @@ class Sphere:
     s.verify_pt_belongs_to_the_sphere(p)
     s.verify_an_arrow_belongs_to_TpM(p,vecs_in_Tp)
   
-    theta = np.sqrt((vecs_in_Tp**2).sum(axis=0))
-    if theta == 0: # sinc case
-      return p + vecs_in_Tp
+    if vecs_in_Tp.shape[0] == p.shape[0] and len(vecs_in_Tp.shape) == 1:
+      if theta == 0: # sinc case
+        return p + vecs_in_Tp
+      else:
+        return p*cos(theta) + vecs_in_Tp/theta * sin(theta)
     else:
-      return p*cos(theta) + vecs_in_Tp/theta * sin(theta)
+      P = np.resize(p,(vecs_in_Tp.shape[1],p.shape[0])).T
+      theta = np.sqrt((vecs_in_Tp**2).sum(axis=0))
+      qs = P*cos(theta) + (vecs_in_Tp * (sin(theta)/theta))
+      qs[:,theta==0] = P[:,theta==0] + vecs_in_Tp[:,theta==0] 
+#      qs[:,theta>np.pi] = 0.
+      return qs
 
   def Log_p(self,p,q):
     """
