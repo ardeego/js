@@ -106,6 +106,11 @@ class PlyParse:
   def getPc(self):
     ''' return point cloud from ply file ''' 
     return self.pts
+  def plotPc(self):
+    pc = self.getPc()
+    mlab.figure(bgcolor=(1,1,1))
+    mlab.points3d(pc[:,0],pc[:,1],pc[:,2],mode='point',color=(0.3,0.3,0.3))
+  
   def getNormals(self):
     ''' return normals from ply file ''' 
     for i in range(self.n.shape[0]):
@@ -115,6 +120,10 @@ class PlyParse:
       else:
         self.n[i,:] /= np.sqrt((self.n[i,:]**2).sum())
     return self.n
+  def plotNormals(self):
+    n = self.getNormals()
+    mlab.figure(bgcolor=(1,1,1))
+    mlab.points3d(n[:,0],n[:,1],n[:,2],mode='point',color=(0.3,0.3,0.3))
   def getRgb(s):
     ''' return coloring from ply file ''' 
     return self.rgb
