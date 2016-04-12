@@ -264,9 +264,10 @@ class SphereHistogram:
     else:
       self.level = level
     self.hist = np.zeros(self.sphereGrid.GetNumTrianglesAtLevel(level))
-
   def GetTriangleCenters(self):
     return self.sphereGrid.GetTriangleCentersAtLevel(self.level)
+  def GetNumTriangles(self):
+    return self.sphereGrid.GetNumTrianglesAtLevel(self.level)
 
   def Compute(self, pts):
     for pt in pts:
