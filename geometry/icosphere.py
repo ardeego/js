@@ -215,3 +215,19 @@ class IcoSphereTessellation(IcoSphere):
         mlab.plot3d(c[:,0], c[:,1], c[:,2], tube_radius=0.02,
             color=color)
 
+class SphereHistogram:
+  def __init__(self, sphereGrid, level = None):
+    self.sphereGrid = sphereGrid
+    if level is None:
+      self.level = sphereGrid.GetNumLevels()
+    else:
+      self.level = level
+    self.hist = np.zeros(self.sphereGrid.GetNumTrianglesAtLevel(level))
+
+  def Compute(self, pts):
+    for pt in pts:
+      self.hist[self.sphereGrid.GetTrianglID(pt)[1]] += 1.
+    print self.hist
+
+  def Plot(self, level, figm):
+    self.sphereGrid.Plot(self.level, figm)
