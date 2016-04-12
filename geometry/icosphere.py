@@ -67,7 +67,7 @@ class IcoSphere(object):
         '''
         n_vertices = self.vertices.shape[0]
         n_tri = self.tri.shape[0]
-        print n_tri, n_vertices
+#        print n_tri, n_vertices
         self.vertices.resize((n_vertices + n_tri * 3, 3), refcheck=False)
         self.tri.resize((n_tri * 5, 3))
         self.tri_levels.append(n_tri * 5)
@@ -89,6 +89,7 @@ class IcoSphere(object):
         return 
 
     def GetTrianglID(self, direction):
+      direction /= np.sqrt((direction**2).sum())
       j = -1 
       id = []
       for i in range(20):
@@ -98,10 +99,10 @@ class IcoSphere(object):
         if self.Intersects(self.vertices[i0, :], self.vertices[i1, :],
             self.vertices[i2, :], direction):
           j = i 
-          print j
+#          print "level0 triangle", j
           #mlab.show(stop=True)
           break
-      if j > 0:
+      if j >= 0:
         id.append(j)
         for lvl, n_lvl in enumerate(self.tri_levels[1:-1]):
           found_triangle = False
@@ -110,7 +111,7 @@ class IcoSphere(object):
             i0 = self.tri[i_tri, 0]
             i1 = self.tri[i_tri, 1]
             i2 = self.tri[i_tri, 2]
-            print '---', n_lvl, j*4, i
+#            print '---', n_lvl, j*4, i
             if self.Intersects(self.vertices[i0, :], self.vertices[i1, :],
                 self.vertices[i2, :], direction):
               id.append(i)
@@ -121,17 +122,28 @@ class IcoSphere(object):
           if not found_triangle:
             print "not good ... Did not find a intersection at level {}".format(lvl)
             break
-          else:
-            print "intersecting triangle {} at lvl {}".format(i, lvl)
+#          else:
+#            print "intersecting triangle {} at lvl {}".format(i, lvl)
       else:
-        print "No intersection with the base triangles found."
-      return id, j - self.tri_levels[-1]
+        print "No intersection with the base triangles found.", direction
+        for i in range(20):
+          i0 = self.tri[i, 0]
+          i1 = self.tri[i, 1]
+          i2 = self.tri[i, 2]
+          print "i:", i
+          if self.Intersects(self.vertices[i0, :], self.vertices[i1, :],
+              self.vertices[i2, :], direction,debug=True):
+            break
 
-    def Intersects(self, p0, p1, p2, direction):
+#      print "returning triangle ID: ", j, self.tri_levels[-1], self.tri_levels[-2], j - self.tri_levels[-2] , id
+      return id, j - self.tri_levels[-2]
+
+    def Intersects(self, p0, p1, p2, direction, debug=False):
       '''
       http://geomalgorithms.com/a06-_intersect-2.html
       '''
-      if False:
+      if debug:
+        # display trinangles intersections for debugging
         if self.figm is None:
           self.figm = mlab.figure()
         mlab.triangular_mesh(np.array([p0[0], p1[0], p2[0]]),
@@ -146,12 +158,14 @@ class IcoSphere(object):
       denom = n.dot(direction)
       if np.abs(denom) < 1e-6:
         # the direction is parallel to the plane of the triangle
-        print "Direction and triangle are parallel. {}".format(denom)
+        if debug:
+          print "Direction and triangle are parallel. {}".format(denom)
         return False
       r = n.dot(p0) / denom
       if r < 0.:
         # We are intersecting on the other side
-        print "Intersection is in the opposite direction. {}".format(r)
+        if debug:
+          print "Intersection is in the opposite direction. {}".format(r)
         return False
       intersection = r * direction
       v = p2 - p0
@@ -168,15 +182,39 @@ class IcoSphere(object):
       if s >= 0 and t >= 0 and s+t <= 1.:
         return True
       else:
-        print "Intersection is outside the triangle {}, {}".format(s,t)
+        if debug:
+          print "Intersection is outside the triangle {}, {}".format(s,t)
         return False
 
     def GetNumTrianglesAtLevel(self, level):
       if level < len(self.tri_levels) - 1:
-        return self.tri_levels[level+1]
+        return self.tri_levels[level+1]-self.tri_levels[level]
       else:
         print "Do not have that many levels ({}).".format(level)
         return -1
+
+    def GetTriangleCentersAtLevel(self, level):
+      tri = self.tri[self.tri_levels[level]:self.tri_levels[level+1], :]
+      cs = np.zeros((tri.shape[0],3))
+      for i_tri in range(tri.shape[0]):
+        i0 = tri[i_tri, 0]
+        i1 = tri[i_tri, 1]
+        i2 = tri[i_tri, 2]
+        c = (self.vertices[i0,:]+self.vertices[i1,:]+self.vertices[i2,:])/3.
+        c /= np.sqrt((c**2).sum())
+        cs[i_tri,:] = c
+      return cs
+    def GetTriangleAreasAtLevel(self, level):
+      tri = self.tri[self.tri_levels[level]:self.tri_levels[level+1], :]
+      areas = np.zeros(tri.shape[0])
+      for i_tri in range(tri.shape[0]):
+        i0 = tri[i_tri, 0]
+        i1 = tri[i_tri, 1]
+        i2 = tri[i_tri, 2]
+        a = -self.vertices[i0,:]+self.vertices[i1,:]
+        b = -self.vertices[i0,:]+self.vertices[i2,:]
+        areas[i_tri] = np.sqrt((np.cross(a,b)**2).sum())*0.5
+      return areas
 
     def GetNumLevels(self):
       return len(self.tri_levels) - 1
@@ -216,18 +254,74 @@ class IcoSphereTessellation(IcoSphere):
             color=color)
 
 class SphereHistogram:
-  def __init__(self, sphereGrid, level = None):
-    self.sphereGrid = sphereGrid
+  def __init__(self, sphereGrid=None, level = None):
+    if sphereGrid is None:
+      self.sphereGrid = IcoSphere(level)
+    else:
+      self.sphereGrid = sphereGrid
     if level is None:
       self.level = sphereGrid.GetNumLevels()
     else:
       self.level = level
     self.hist = np.zeros(self.sphereGrid.GetNumTrianglesAtLevel(level))
 
+  def GetTriangleCenters(self):
+    return self.sphereGrid.GetTriangleCentersAtLevel(self.level)
+
   def Compute(self, pts):
     for pt in pts:
       self.hist[self.sphereGrid.GetTrianglID(pt)[1]] += 1.
-    print self.hist
+    self.hist /= self.hist.sum()
+    self.pdf = np.zeros_like(self.hist)
+    self.areas = self.sphereGrid.GetTriangleAreasAtLevel(self.level)
+    for i in range(self.hist.shape[0]):
+      self.pdf[i] = self.hist[i]/self.areas[i]
 
-  def Plot(self, level, figm):
+  def PlotGrid(self, level, figm):
     self.sphereGrid.Plot(self.level, figm)
+
+  def PlotHist(self, scale, figm=None):
+    if figm is None:
+      figm = mlab.figure(bgcolor=(1,1,1))
+    cs = self.sphereGrid.GetTriangleCentersAtLevel(self.level)
+    for i in range(cs.shape[0]):
+      l = cs[i,:]*(self.hist[i]*scale+1.01)
+      mlab.plot3d([cs[i,0],l[0]],[cs[i,1],l[1]],[cs[i,2],l[2]],
+          color=(0.2,0.2,0.2),tube_radius=None)
+  def Entropy(self, pts):
+    H = 0.
+    for pt in pts:
+      i = self.sphereGrid.GetTrianglID(pt)[1]
+      H -= np.log(self.pdf[i])
+    H /=pts.shape[0]
+    return H
+
+  def CrossEntropy(self, pts, q):
+    H = 0.
+    for pt in pts:
+      i = self.sphereGrid.GetTrianglID(pt)[1]
+      H -= np.log(q[i])
+    H /=pts.shape[0]
+    return H
+
+if __name__=="__main__":
+  from scipy.linalg import sqrtm
+  theta = 0.*np.pi/180.
+  R = np.array([[1., 0., 0.], 
+                [0., np.cos(theta), -np.sin(theta)],
+                [0., np.sin(theta), np.cos(theta)]])
+  L = np.eye(3)
+  L[0,0] = 100.
+  L[1,1] = 1.
+  L[2,2] = 1.
+  S = R.T.dot(L).dot(R)
+  Nr = 20000
+  x = sqrtm(S).dot(np.random.randn(3,Nr))
+  print np.cov(x)
+
+  sHist = SphereHistogram(level=2)
+  sHist.Compute(x.T)
+
+  sHist.PlotHist(10.)
+  mlab.show(stop=True)
+
