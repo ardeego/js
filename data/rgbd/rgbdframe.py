@@ -88,16 +88,16 @@ class RgbdFrame(object):
       print 'loading from '+path+'.normals'
       with open(path+".normals") as f:
         shape = np.fromstring(f.readline(),sep=" ")
-        print shape
+#        print shape
         s.n = np.fromfile(f, dtype=np.float32, count=-1,
             sep="").reshape(shape)
-        print s.n.shape, shape[0]*shape[1]*shape[2]
+#        print s.n.shape, shape[0]*shape[1]*shape[2]
     else:
       print 'no surface normal file found at '+path+'.normals'
       s.n = np.zeros(1)
-    print s.rgb.shape
+#    print s.rgb.shape
     s.gray = cv2.cvtColor(s.rgb, cv2.COLOR_BGR2GRAY)
-    print s.gray.shape
+#    print s.gray.shape
     s.mask = s.d > 0.0
     s.mask3d = s.mask.copy()
     s.mask3d = np.resize(s.mask3d,(s.rgb.shape))
@@ -125,6 +125,7 @@ class RgbdFrame(object):
     print s.n.shape, s.rgb.shape
     if s.n.shape[0] == s.rgb.shape[0] and s.n.shape[1] == \
       s.rgb.shape[1] and s.n.shape[2] == s.rgb.shape[2]:
+        print "using loaded surface normals"
         return s.n
     if algo is None:
       algo = 'sobel'

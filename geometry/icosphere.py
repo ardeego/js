@@ -291,17 +291,24 @@ class SphereHistogram:
           color=(0.2,0.2,0.2),tube_radius=None)
   def Entropy(self, pts):
     H = 0.
+#    self.areas = self.sphereGrid.GetTriangleAreasAtLevel(self.level)
+#    W = 0.
     for pt in pts:
       i = self.sphereGrid.GetTrianglID(pt)[1]
       H -= np.log(self.pdf[i])
+#      W += self.areas[i]
     H /=pts.shape[0]
+#    H /= W
     return H
-
   def CrossEntropy(self, pts, q):
     H = 0.
+#    self.areas = self.sphereGrid.GetTriangleAreasAtLevel(self.level)
+#    W = 0.
     for pt in pts:
       i = self.sphereGrid.GetTrianglID(pt)[1]
       H -= np.log(q[i])
+#      W += self.areas[i]
+#    H /= W
     H /=pts.shape[0]
     return H
 
