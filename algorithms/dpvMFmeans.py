@@ -19,6 +19,20 @@ def MLestTau(mu, xSum, count):
     tau -= f/df
   return tau
 
+def FitMlDPvMFMM(ns, lamb, it=20):
+  dpMeans = DPvMFmeans(lamb)
+  for i,n in enumerate(ns):
+    dpMeans.AddObservation(n)
+  for i in range(it):
+    dpMeans.UpdateMeans()
+    dpMeans.UpdateLabels()
+  mu = dpMeans.mus.copy()
+  K = mu.shape[0]
+  tau = dpMeans.GetTaus()
+  pi = np.bincount(dpMeans.zs,minlength=K).astype(np.float)
+  pi /= float(ns.shape[0])
+  return mu, tau, pi
+
 class DPvMFmeans(object):
   def __init__(self, lamb):
     self.lamb = lamb

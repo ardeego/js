@@ -35,24 +35,29 @@ class Rot3:
     return q
   def logMap(self):
     theta = np.arccos((np.trace(self.R) -1)/2.0)
-    W = theta/(2.*np.sin(theta))*(self.R - self.R.T)
+    W = 1./(2.*np.sinc(theta))*(self.R - self.R.T)
     #print theta/(2.*np.sin(theta))
     #print (self.R - self.R.T)
     return vee(W)
   def expMap(self,ww):
-    if ww.shape[0] == 3 and ww.shape[1] == 3:
-      W = ww
-      w = vee(W)
-    elif ww.size == 3:
+    if ww.size == 3:
       w = ww
       W = invVee(w)
+    elif ww.shape[0] == 3 and ww.shape[1] == 3:
+      W = ww
+      w = vee(W)
     else:
       raise ValueError
     theta = np.sqrt((w**2).sum())
-    if theta < 1e-12:
-      self.R = np.eye(3)
-    else:
-      self.R = np.eye(3) + np.sin(theta)/theta * W + (1.0 - np.cos(theta))/theta**2 * W.dot(W)
+    a = np.sinc(theta)
+    b = (1.-np.cos(theta))/(theta**2)
+    if not b==b:
+      b = 0.
+#    if theta < 1e-12:
+#      self.R = np.eye(3)
+#    else:
+#      self.R = np.eye(3) + np.sin(theta)/theta * W + (1.0 - np.cos(theta))/theta**2 * W.dot(W)
+    self.R = np.eye(3) + a*W + b*W.dot(W)
     return self.R
   def dot(self,Rb):
     return Rot3(self.R.dot(Rb.R))
