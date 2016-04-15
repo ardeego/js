@@ -5,7 +5,21 @@ def norm(x):
 def normed(x):
   return x/norm(x)
 
-class DPvMF(object):
+def MLestTau(mu, xSum, count):
+  tau = 1.0;                                                           
+  prevTau = 0.;                                                        
+  eps = 1e-8;                                                          
+  R = norm(xSum)/count;                                               
+  while np.abs(tau - prevTau) > eps:
+    inv_tanh_tau = 1./np.tanh(tau)
+    inv_tau = 1./tau
+    f = -inv_tau + inv_tanh_tau - R
+    df = inv_tau*inv_tau - inv_tanh_tau*inv_tanh_tau + 1.
+    prevTau = tau
+    tau -= f/df
+  return tau
+
+class DPvMFmeans(object):
   def __init__(self, lamb):
     self.lamb = lamb
     self.mus = np.zeros((0,3))
@@ -40,3 +54,8 @@ class DPvMF(object):
     ''' Recompute labels '''
     for i in range(self.qs.shape[0]):
       self.zs[i] = self.ComputeLabel(self.qs[i,:])
+  def GetTaus(self):
+    tau = np.zeros(self.mus.shape[0])
+    for k in range(self.mus.shape[0]):
+      tau[k] = MLestTau(self.mus[k,:],self.qs[self.zs==k,:].sum(axis=0), (self.zs==k).sum())
+    return tau
