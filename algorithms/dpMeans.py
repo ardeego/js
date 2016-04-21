@@ -6,57 +6,80 @@ def normed(x):
   # return unit L2 length vectors
   return x / np.sqrt((x**2).sum(axis=0)) 
 
+def FitMlDPGMM(xs,lamb,it=20):
+  dpMeans = DPmeans(lamb)
+  dpMeans.Compute(xs,it)
+  mu = dpMeans.mus.copy()
+  K = dpMeans.K
+  Ss = dpMeans.GetSigmas(xs)
+  pi = np.bincount(dpMeans.zs,minlength=K).astype(np.float)
+  pi /= float(xs.shape[0])
+  return mu, Ss, pi
+
+
 class DPmeans(object):
   def __init__(self, lamb):
     self.lamb = lamb
-  def removeCluster(self,k):
-    self.mu = np.concatenate((self.mu[:,:k],self.mu[:,k+1::]),axis=1)
+  def RemoveCluster(self,k):
+    self.mus = np.concatenate((self.mus[:,:k],self.mus[:,k+1::]),axis=1)
     self.N_ = np.concatenate((self.N_[:k],self.N_[k+1::]),axis=1)
-    self.z[self.z>k] -= 1
+    self.zs[self.zs>k] -= 1
     self.K -= 1
 
-  def labelAssign(self,i,x_i):
-    z_i = np.argmin(np.r_[np.sqrt(((x_i - self.mu)**2).sum(axis=0)),np.array([self.lamb])])
+  def LabelAssign(self,i,x_i):
+    z_i = np.argmin(np.r_[np.sqrt(((x_i - self.mus)**2).sum(axis=0)),np.array([self.lamb])])
     # check if this was the last datapoint in a cluster if so do not
     # assign to it again
-    if self.N_[self.z[i]] == 0 and z_i == self.z[i]:
-      self.removeCluster(self.z[i])
-      z_i = np.argmin(np.r_[np.sqrt(((x_i - self.mu)**2).sum(axis=0)),np.array([self.lamb])])
+    if self.N_[self.zs[i]] == 0 and z_i == self.zs[i]:
+      self.RemoveCluster(self.zs[i])
+      z_i = np.argmin(np.r_[np.sqrt(((x_i - self.mus)**2).sum(axis=0)),np.array([self.lamb])])
     # creata a new cluster if required
     if z_i == self.K:
-      self.mu = np.concatenate((self.mu,x_i),axis=1)
+      self.mus = np.concatenate((self.mus,x_i),axis=1)
       self.N_ = np.concatenate((self.N_,np.array([0])),axis=0)
       self.K += 1
     return z_i
 
-  def compute(self,x,Tmax=100):
+  def Compute(self,x,Tmax=100):
     # init stuff
     N = x.shape[1]
     self.K = 1
-    self.z = np.zeros(N,dtype=np.int) # labels for each data point
-    self.mu = x[:,0][:,np.newaxis] # the first data point always creates a cluster
-    self.N_ = np.bincount(self.z,minlength=self.K) # counts per cluster
+    self.zs = np.zeros(N,dtype=np.int) # labels for each data point
+    self.mus = x[:,0][:,np.newaxis] # the first data point always creates a cluster
+    self.N_ = np.bincount(self.zs,minlength=self.K) # counts per cluster
     self.C = np.zeros(Tmax) # cost function value
     self.C[0] = 1e6
     for t in range(1,Tmax):
       # label assignment
       for i in range(N):
-        self.N_[self.z[i]] -= 1 
-        self.z[i] = self.labelAssign(i,x[:,i][:,np.newaxis])
-        self.N_[self.z[i]] += 1
+        self.N_[self.zs[i]] -= 1 
+        self.zs[i] = self.LabelAssign(i,x[:,i][:,np.newaxis])
+        self.N_[self.zs[i]] += 1
       # centroid update
       for k in range(self.K-1,-1,-1):
         if self.N_[k] > 0:
-          self.mu[:,k] = (x[:,self.z==k].sum(axis=1))/self.N_[k]
+          self.mus[:,k] = (x[:,self.zs==k].sum(axis=1))/self.N_[k]
         else:
-          self.removeCluster(k)
+          self.RemoveCluster(k)
       # eval cost function
       self.C[t] = np.array(\
-          [np.sqrt(((x[:,i][:,np.newaxis]-self.mu[:,z_i][:,np.newaxis])**2).sum(axis=0)) for i,z_i in enumerate(self.z)]).sum() \
+          [np.sqrt(((x[:,i][:,np.newaxis]-self.mus[:,z_i][:,np.newaxis])**2).sum(axis=0)) for i,z_i in enumerate(self.zs)]).sum() \
           + self.K*self.lamb
       print 'iteration {}:\tcost={};\tcounts={}'.format(t,self.C[t], self.N_)
       if self.C[t] >= self.C[t-1]:
         break;
+  def GetSigmas(self,xs):
+    '''
+    Compute the ML estimate of the covariances in each cluster
+    '''
+    N = float(xs.shape[1])
+    Ss = []
+    for k in range(self.K):
+      for x in xs[:,self.zs==k]:
+        S = np.outer(x,x)
+        Ss.append(S/(N-1.)-(N/(N-1.))*np.outer(self.mus[k,:],self.mus[k,:]))
+    return Ss
+
 
 if __name__=="__main__":
   # generate two noisy clusters
@@ -68,4 +91,4 @@ if __name__=="__main__":
   # instantiate DP-means algorithm object
   dpmeans = DPmeans(lamb = 0.4)
   # compute clustering (maximum of 30 iterations)
-  dpmeans.compute(x,Tmax=30)
+  dpmeans.Compute(x,Tmax=30)
