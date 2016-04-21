@@ -13,9 +13,8 @@ def FitMlDPGMM(xs,lamb,it=20):
   K = dpMeans.K
   Ss = dpMeans.GetSigmas(xs)
   pi = np.bincount(dpMeans.zs,minlength=K).astype(np.float)
-  pi /= float(xs.shape[0])
+  pi /= float(pi.sum())
   return mu, Ss, pi
-
 
 class DPmeans(object):
   def __init__(self, lamb):
@@ -42,6 +41,7 @@ class DPmeans(object):
 
   def Compute(self,x,Tmax=100):
     # init stuff
+    print x.shape
     N = x.shape[1]
     self.K = 1
     self.zs = np.zeros(N,dtype=np.int) # labels for each data point
@@ -72,14 +72,18 @@ class DPmeans(object):
     '''
     Compute the ML estimate of the covariances in each cluster
     '''
-    N = float(xs.shape[1])
     Ss = []
     for k in range(self.K):
-      for x in xs[:,self.zs==k]:
-        S = np.outer(x,x)
-        Ss.append(S/(N-1.)-(N/(N-1.))*np.outer(self.mus[k,:],self.mus[k,:]))
+      # regularize
+      S = np.identity(3)*0.01
+      for x in xs[:,self.zs==k].T:
+        S += np.outer(x,x)
+      N = (self.zs==k).sum()
+      if N > 1:
+        Ss.append(S/(N-1.)-(N/(N-1.))*np.outer(self.mus[:,k],self.mus[:,k]))
+      else:
+        Ss.append(S)
     return Ss
-
 
 if __name__=="__main__":
   # generate two noisy clusters

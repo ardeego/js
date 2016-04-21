@@ -30,7 +30,7 @@ def FitMlDPvMFMM(ns, lamb, it=20):
   K = mu.shape[0]
   tau = dpMeans.GetTaus()
   pi = np.bincount(dpMeans.zs,minlength=K).astype(np.float)
-  pi /= float(ns.shape[0])
+  pi /= float(pi.sum())
   return mu, tau, pi
 
 class DPvMFmeans(object):
