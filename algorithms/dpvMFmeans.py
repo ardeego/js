@@ -64,6 +64,8 @@ class DPvMFmeans(object):
     ''' Update means of current observation set '''
     for k in range(self.mus.shape[0]):
       self.mus[k,:] = normed(self.qs[self.zs==k,:].sum(axis=0))
+    #TODO: remove single data point clusters
+
   def UpdateLabels(self):
     ''' Recompute labels '''
     for i in range(self.qs.shape[0]):
@@ -71,5 +73,9 @@ class DPvMFmeans(object):
   def GetTaus(self):
     tau = np.zeros(self.mus.shape[0])
     for k in range(self.mus.shape[0]):
-      tau[k] = MLestTau(self.mus[k,:],self.qs[self.zs==k,:].sum(axis=0), (self.zs==k).sum())
+      Nk = (self.zs==k).sum()
+      if Nk == 1:
+        tau[k] = 0.
+      else:
+        tau[k] = MLestTau(self.mus[k,:],self.qs[self.zs==k,:].sum(axis=0), Nk)
     return tau
