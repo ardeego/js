@@ -65,7 +65,8 @@ class DPmeans(object):
       self.C[t] = np.array(\
           [np.sqrt(((x[:,i][:,np.newaxis]-self.mus[:,z_i][:,np.newaxis])**2).sum(axis=0)) for i,z_i in enumerate(self.zs)]).sum() \
           + self.K*self.lamb
-      print 'iteration {}:\tcost={};\tcounts={}'.format(t,self.C[t], self.N_)
+      print 'iteration {}:\tcost={:2.5f};\tK={}\tavg counts={:2.2f} range={} {}'.format(t,
+          self.C[t],self.K,np.mean(self.N_),np.min(self.N_),np.max(self.N_))
       if self.C[t] >= self.C[t-1]:
         break;
   def GetSigmas(self,xs):
