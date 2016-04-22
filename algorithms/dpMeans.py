@@ -75,14 +75,14 @@ class DPmeans(object):
     Ss = []
     for k in range(self.K):
       # regularize
-      S = np.identity(3)*0.01
+      S = np.zeros((3,3))
       for x in xs[:,self.zs==k].T:
         S += np.outer(x,x)
       N = (self.zs==k).sum()
       if N > 1:
         Ss.append(S/(N-1.)-(N/(N-1.))*np.outer(self.mus[:,k],self.mus[:,k]))
       else:
-        Ss.append(S)
+        Ss.append(np.identity(3)*100.)
     return Ss
 
 if __name__=="__main__":
