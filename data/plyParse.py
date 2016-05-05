@@ -3,14 +3,12 @@ import re
 
 import mayavi.mlab as mlab
 
-
 class PlyParse:
   def __init__(self):
     self.pts = None
     self.n = None 
     self.rgb = None
     self.face = None
-
   def parse(self,path):
     f = open(path)
     line = ''
@@ -76,7 +74,6 @@ class PlyParse:
           self.face[i,0] = float(line[1])
           self.face[i,1] = float(line[2])
           self.face[i,2] = float(line[3])
-
   def write(self,path):
     self.elements=dict()
     self.elements['vertex'] = {'N':self.pts.shape[0],'props':
@@ -102,7 +99,6 @@ class PlyParse:
       elif elem == 'face' and not self.face is None:
         data = np.c_[np.ones((self.face.shape[0],1))*3,self.face]
         np.savetxt(f, data, fmt='%u %d %d %d')
-  
   def getPc(self):
     ''' return point cloud from ply file ''' 
     return self.pts
@@ -110,7 +106,6 @@ class PlyParse:
     pc = self.getPc()
     mlab.figure(bgcolor=(1,1,1))
     mlab.points3d(pc[:,0],pc[:,1],pc[:,2],mode='point',color=(0.3,0.3,0.3))
-  
   def getNormals(self):
     ''' return normals from ply file ''' 
     for i in range(self.n.shape[0]):

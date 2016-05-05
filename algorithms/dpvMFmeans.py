@@ -19,7 +19,7 @@ def MLestTau(mu, xSum, count):
     tau -= f/df
   return tau
 
-def FitMlDPvMFMM(ns, lamb, it=20, mu=None):
+def FitMlDPvMFMM(ns, lamb, it=20, mu=None, ws=None):
   dpMeans = DPvMFmeans(lamb, mu)
   for i,n in enumerate(ns):
     dpMeans.AddObservation(n)
@@ -34,12 +34,9 @@ def FitMlDPvMFMM(ns, lamb, it=20, mu=None):
         f, K, np.mean(Ns), np.min(Ns), np.max(Ns))
     if f-fPrev <= 0.:
       break
-  mu = dpMeans.mus.copy()
-  K = mu.shape[0]
-  tau = dpMeans.GetTaus()
-  pi = np.bincount(dpMeans.zs,minlength=K).astype(np.float)
-  pi /= float(pi.sum())
-  return mu, tau, pi
+  Ns, mus, taus = dpMeans.GetClusterParameters(ws)
+  pi = Ns/float(Ns.sum())
+  return mus, taus, pi
 
 def logSumExp(a,pmFactors=None):
   aMax = np.max(a)
@@ -105,13 +102,36 @@ class DPvMFmeans(object):
       self.zs[i], df = self.ComputeLabel(self.qs[i,:])
       f += df
     return f
-  def GetTaus(self):
+  def GetClusterParameters(self, ws=None):
+    N = self.qs.shape[0]
     K = self.mus.shape[0]
-    tau = np.zeros(K)
+    if ws is None:
+      # no weights passed in so use 1s
+      ws = np.ones(N)
+      mus = self.mus.copy()
+      Ns = np.bincount(self.zs,minlength=K).astype(np.float)
+    else:
+      mus = np.zeros((K,3))
+      Ns = np.zeros(K)
+      for k in range(K):
+        ids = self.zs == k
+        Ns[k] = np.sum(ws[ids])
+        mus[k,:] = normed((ws[ids]*self.qs[ids,:].T).sum(axis=1))
+    print K, Ns
+    taus = np.zeros(K)
     for k in range(K):
-      Nk = (self.zs==k).sum()
-      if Nk == 1:
-        tau[k] = 1e-12
+      ids = self.zs == k
+      if Ns[k] <= 1.:
+        taus[k] = 1e-12
       else:
-        tau[k] = MLestTau(self.mus[k,:],self.qs[self.zs==k,:].sum(axis=0), Nk)
-    return tau
+        taus[k] = MLestTau(mus[k,:],(ws[ids]*self.qs[ids,:].T).sum(axis=1),Ns[k])
+
+    self.N_ = np.bincount(self.zs,minlength=K).astype(np.float)
+    idKeep = self.N_ > max(10,0.001*N)
+    print "threshold for cluster removal {}".format(max(10,0.001*N))
+    print "removing {} of {} clusters".format(K - idKeep.sum(),K)
+    K = idKeep.sum()
+    mus = mus[idKeep,:]
+    Ns = Ns[idKeep]
+    taus = taus[idKeep]
+    return Ns, mus, taus

@@ -6,15 +6,12 @@ def normed(x):
   # return unit L2 length vectors
   return x / np.sqrt((x**2).sum(axis=0)) 
 
-def FitMlDPGMM(xs,lamb,it=20):
+def FitMlDPGMM(xs,lamb,it=20, ws=None):
   dpMeans = DPmeans(lamb)
   dpMeans.Compute(xs,it)
-  mu = dpMeans.mus.copy()
-  K = dpMeans.K
-  Ss = dpMeans.GetSigmas(xs)
-  pi = np.bincount(dpMeans.zs,minlength=K).astype(np.float)
-  pi /= float(pi.sum())
-  return mu, Ss, pi
+  Ns, mus, Ss = dpMeans.GetClusterParameters(xs,ws)
+  pi = Ns/float(Ns.sum())
+  return mus, Ss, pi
 
 class DPmeans(object):
   def __init__(self, lamb):
@@ -69,22 +66,64 @@ class DPmeans(object):
           self.C[t],self.K,np.mean(self.N_),np.min(self.N_),np.max(self.N_))
       if self.C[t] >= self.C[t-1]:
         break;
-  def GetSigmas(self,xs):
+  def GetClusterParameters(self,xs, ws=None):
     '''
-    Compute the ML estimate of the covariances in each cluster
+    Compute the sufficient statistics in each cluster.
+    Optionally weights for each data point can be passed in.
     '''
+    N = xs.shape[1]
+    if ws is None:
+      # no weights passed in so use 1s
+      ws = np.ones(N)
+      Ns = self.N_.copy()
+      mus = self.mus.copy()
+    else:
+      mus = np.zeros((3,self.K))
+      Ns = np.zeros(self.K)
+      for k in range(self.K):
+        ids = self.zs == k
+        Ns[k] = np.sum(ws[ids])
+        mus[:,k] = np.sum(ws[ids]*xs[:,ids], axis=1)/Ns[k]
     Ss = []
     for k in range(self.K):
+      ids = self.zs==k
+#      if ids.sum() <= 0.1*N:
+#        continue # sort out very small clusters because they tend to
+#                 # make numeric difficulties 
       # regularize
       S = np.zeros((3,3))
-      for x in xs[:,self.zs==k].T:
-        S += np.outer(x,x)
-      N = (self.zs==k).sum()
-      if N > 1:
-        Ss.append(S/(N-1.)-(N/(N-1.))*np.outer(self.mus[:,k],self.mus[:,k]))
+      Stilde = np.zeros((3,3))
+      for i,x in enumerate(xs[:,ids].T):
+        S += ws[ids][i]*np.outer(x,x)
+        Stilde += np.outer(x,x)
+#        Ss.append(np.identity(3)*1e-12+S/(Ns[k]-1.)-(Ns[k]/(Ns[k]-1.))*np.outer(mus[:,k],mus[:,k]))
+#        Ss.append(S/(Ns[k]-1.)-(Ns[k]/(Ns[k]-1.))*np.outer(mus[:,k],mus[:,k]))
+      if self.N_[k] > 1:
+        Ss.append((S-Ns[k]*np.outer(mus[:,k],mus[:,k]))/(Ns[k]-((ws[ids]**2).sum()/Ns[k])))
       else:
-        Ss.append(np.identity(3)*100.)
-    return Ss
+        Ss.append(np.identity(3)*1e6)
+      if False:
+        Nsk = ids.sum()
+        Stilde = Stilde/(Nsk-1.)-(Nsk/(Nsk-1.))*np.outer(self.mus[:,k],self.mus[:,k])
+        print '---', Ss[-1]
+        print Stilde
+        print Ss[-1]-Stilde
+        
+#      else:
+#        print "low number of data points in cluster ",k, ": ",Ns[k] 
+#        Ss.append(np.identity(3)*1e6)
+#      print Ns[k], mus[:,k]
+#      print Ss[k]
+
+    # delete small clusters
+    idKeep = self.N_ > max(10,0.001*N)
+    print "threshold for cluster removal {}".format(max(10,0.001*N))
+    print "removing {} of {} clusters".format(self.K - idKeep.sum(),self.K)
+    K = idKeep.sum()
+    mus = mus[:,idKeep]
+    Ns = Ns[idKeep]
+    Ss = [S for i,S in enumerate(Ss) if idKeep[i]]
+    return Ns, mus, Ss
 
 if __name__=="__main__":
   # generate two noisy clusters
