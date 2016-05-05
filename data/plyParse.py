@@ -1,8 +1,6 @@
 import numpy as np
 import re
 
-import mayavi.mlab as mlab
-
 class PlyParse:
   def __init__(self):
     self.pts = None
@@ -103,6 +101,7 @@ class PlyParse:
     ''' return point cloud from ply file ''' 
     return self.pts
   def plotPc(self):
+    import mayavi.mlab as mlab
     pc = self.getPc()
     mlab.figure(bgcolor=(1,1,1))
     mlab.points3d(pc[:,0],pc[:,1],pc[:,2],mode='point',color=(0.3,0.3,0.3))
@@ -116,6 +115,7 @@ class PlyParse:
         self.n[i,:] /= np.sqrt((self.n[i,:]**2).sum())
     return self.n
   def plotNormals(self):
+    import mayavi.mlab as mlab
     n = self.getNormals()
     mlab.figure(bgcolor=(1,1,1))
     mlab.points3d(n[:,0],n[:,1],n[:,2],mode='point',color=(0.3,0.3,0.3))

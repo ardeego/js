@@ -1,7 +1,6 @@
 import numpy as np
 from rot3 import Rot3
 
-
 def normed(a):
   return a/np.sqrt((a**2).sum())
 
