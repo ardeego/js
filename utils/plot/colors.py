@@ -16,8 +16,10 @@ def colorScheme(name):
   labelColor.append((255/255.0,13/255.0,255/255.0)) # pink       
   labelColor.append((32/255.0,232/255.0,59/255.0)) # green       
   labelColor.append((232/255.0,65/255.0,32/255.0)) # red         
-  labelColor.append((255/255.0,255/255.0,0/255.0)) # yellow
   labelColor.append((32/255.0,65/255.0,255/255.0)) # blue
+  labelColor.append((201/255.0,189/255.0,79/255.0)) # yellow
+  labelColor.append((132/255.0,73/255.0,194/255.0)) # purple
+  labelColor.append((199/255.0,153/255.0,132/255.0)) # brown
 
   labelColorMap = dict()
   labelColorMap['red'] = (232/255.0,65/255.0,32/255.0) # red         
@@ -37,3 +39,4 @@ def colorScheme(name):
   else:
     print 'color not found'
     return []
+
