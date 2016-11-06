@@ -11,8 +11,13 @@ class Quaternion:
       self.q =np.array([w,vec[0],vec[1],vec[2]])
     if not vec is None and vec.size == 4:
       self.q = vec.copy()
+    self.flipToUpperHalfSphere()
+  def flipToUpperHalfSphere(self):
+    if self.q[0] < 0:
+      self.q = -self.q # flip onto upper half sphere
   def setToRandom(self):
     self.q = normed(np.random.randn(4))
+    self.flipToUpperHalfSphere()
   def fromRot3(self,R_):
     # https://www.cs.cmu.edu/afs/cs/academic/class/16741-s07/www/lecture7.pdf
     if isinstance(R_,Rot3):
@@ -42,6 +47,7 @@ class Quaternion:
       self.q[0] = 0.25*(R[1,0]-R[0,1])/self.q[3]
       self.q[1] = 0.25*(R[0,2]+R[2,0])/self.q[3]
       self.q[2] = 0.25*(R[2,1]+R[1,2])/self.q[3]
+    self.flipToUpperHalfSphere()
   def inverse(self):
     q = self.normalized().q
     return Quaternion(w=q[0],vec=-q[1:])
@@ -59,11 +65,17 @@ class Quaternion:
 #        y = q[0]*p[2]-q[3]*p[1]+q[2]*p[0]+q[1]*p[3],
 #        z = q[0]*p[3]+q[2]*p[1]-q[1]*p[2]+q[3]*p[0])
   def angleTo(self,q2):
-    theta,_ = (self.dot(q2.inverse()).normalized()).toAxisAngle()
+#    theta,_ = (self.dot(q2.inverse()).normalized()).toAxisAngle()
+    print self.q
+    print q2.q
+    print q2.inverse().q
+    dq = self.dot(q2.inverse()).normalized()
+    theta = 2.*np.arctan2(np.sqrt((dq.q[1:]**2).sum()), dq.q[0])
     return theta
   def toAxisAngle(self):
     self.normalize()
-    theta = 2.0*np.arccos(self.q[0])
+#    theta = 2.0*np.arccos(self.q[0])
+    theta = 2.*np.arctan2(np.sqrt((self.q[1:]**2).sum()), self.q[0])
     sinThetaHalf = np.sqrt(1.-self.q[0]**2)
     if theta < 1e-5:
       axis = np.array([0,0,1])
@@ -89,7 +101,6 @@ class Quaternion:
     return ax*theta/dt
   def slerp(self,q2,t):
     # http://www.arcsynthesis.org/gltut/Positioning/Tut08%20Interpolation.html
-    # http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
     a = Quaternion()
     dot = self.q.dot(q2.q)
     if dot > 0.9995:
@@ -140,3 +151,21 @@ class Quaternion:
   def __repr__(self):
 #    return "{}".format(self.q)
     return "w|x|y|z: {}\t{}\t{}\t{}".format(self.q[0],self.q[1],self.q[2],self.q[3])
+
+
+if __name__=="__main__":
+  q0 = Quaternion()
+  q1 = Quaternion()
+  q0.fromAxisAngle(90./180.*np.pi, np.array([0,1,0]))
+  q1.fromAxisAngle(90./180.*np.pi, np.array([0,1,0]))
+
+  print q0.angleTo(q1)*180./np.pi
+
+  v = np.array([ 0.884004, -0.371412, 0.115123, 0.259491])
+  qa = Quaternion(vec=v) 
+  qb = Quaternion(vec=-v) 
+  print qa.angleTo(qb)*180/np.pi
+  print qa.toAxisAngle()
+  print qb.toAxisAngle()
+  print qa.dot(qb.inverse()).q
+  print qa.dot(qb.inverse()).toAxisAngle()
