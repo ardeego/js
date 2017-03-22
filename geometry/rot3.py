@@ -63,3 +63,4 @@ class Rot3:
     return Rot3(self.R.dot(Rb.R))
   def __repr__(self):
     return "{}".format(self.R)
+

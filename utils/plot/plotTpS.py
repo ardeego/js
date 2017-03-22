@@ -5,7 +5,7 @@ import mayavi.mlab as mlab
 import numpy as np
 from scipy.linalg import solve, inv, norm
 
-from vpCluster.manifold.sphere import *
+from js.geometry.sphere import *
 
 def plotGaussianTpS2(R):
   Rr,Th = np.meshgrid(np.linspace(0,0.5,100),np.linspace(-np.pi,np.pi,100))

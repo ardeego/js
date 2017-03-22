@@ -1,16 +1,14 @@
 
 import numpy as np
 import mayavi.mlab as mlab
-import ipdb
 
-from vpCluster.manifold.sphere import Sphere
+from js.geometry.sphere import Sphere
 from js.utils.plot.colors import colorScheme
 
 S2 = Sphere(3)
 def plotvMF(mu,tau,pi,figm,color=(1.,0.0,0.0)):
   X,Y,Z = S2.mesh(1.)
   q = np.c_[X.ravel(),Y.ravel(),Z.ravel()].T
-#  ipdb.set_trace()
   pdf = pi*np.exp(mu.T.dot(q)*tau)*tau/(4*np.pi*np.sinh(tau)) +1.
   X*=np.reshape(pdf,X.shape)
   Y*=np.reshape(pdf,X.shape)
